@@ -323,12 +323,12 @@ class BaseCommand(object):
                                    "(%s) and 'can_import_settings' (%s) command "
                                    "options." % (self.leave_locale_alone,
                                                  self.can_import_settings))
-            # Switch to US English, because django-admin.py creates database
+            # Deactivate translations, because django-admin.py creates database
             # content like permissions, and those shouldn't contain any
             # translations.
             from django.utils import translation
             saved_locale = translation.get_language()
-            translation.activate('en-us')
+            translation.deactivate_all()
 
         try:
             if (self.requires_system_checks and
