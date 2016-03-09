@@ -845,8 +845,24 @@ class ReverseManyRelatedObjectsDescriptor(object):
         # clear() can change expected output of 'value' queryset, we force evaluation
         # of queryset before clear; ticket #19816
         value = tuple(value)
-        manager.clear()
-        manager.add(*value)
+
+        #########################################################################
+        # Delete unused objects with help of `remove` method not `clear` method #
+        # solution the same as for ForeignRelatedObjectsDescriptor              #
+        # needs for InsuranceRequestDetail & InsuranceRequestOffer              #
+        #########################################################################
+
+        existing_objects = set(manager.all())
+        new_objects = set(value)
+
+        # define objects that have to be added / removed
+        objects_to_remove = existing_objects - new_objects
+        objects_to_add = new_objects - existing_objects
+
+        for obj in objects_to_remove:
+            obj.remove()
+
+        manager.add(*objects_to_add)
 
 class ForeignObjectRel(object):
     def __init__(self, field, to, related_name=None, limit_choices_to=None,
