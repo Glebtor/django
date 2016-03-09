@@ -1214,7 +1214,7 @@ class ReverseManyRelatedObjectsDescriptor(object):
         objects_to_add = new_objects - existing_objects
 
         for obj in objects_to_remove:
-            obj.remove()
+            manager.remove(obj)
 
         manager.add(*objects_to_add)
 
