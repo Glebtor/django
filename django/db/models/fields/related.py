@@ -781,6 +781,8 @@ class ForeignRelatedObjectsDescriptor(object):
     def __set__(self, instance, value):
         manager = self.__get__(instance)
 
+        #### NOT NEEDED FOR DJANGO 1.9 #########################################
+
         existing_objects = set(manager.all())
         new_objects = set(value)
 
@@ -1197,11 +1199,12 @@ class ReverseManyRelatedObjectsDescriptor(object):
         # of queryset before clear; ticket #19816
         value = tuple(value)
 
-        ############################################################
-        # Delete unused objects by remove not clear                #
-        # solution the same as for ForeignRelatedObjectsDescriptor #
-        # needs for InsuranceRequestDetail & InsuranceRequestOffer #
-        ############################################################
+        #########################################################################
+        # NOT NEEDED FOR DJANGO 1.9                                             #
+        # Delete unused objects with help of `remove` method not `clear` method #
+        # solution the same as for ForeignRelatedObjectsDescriptor              #
+        # needed for InsuranceRequestDetail & InsuranceRequestOffer             #
+        #########################################################################
 
         existing_objects = set(manager.all())
         new_objects = set(value)
