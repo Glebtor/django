@@ -17,6 +17,7 @@ from django.db.migrations.loader import MigrationLoader, AmbiguityError
 from django.db.migrations.state import ProjectState
 from django.db.migrations.autodetector import MigrationAutodetector
 from django.utils.module_loading import module_has_submodule
+from django.conf import settings
 
 
 class Command(BaseCommand):
@@ -132,6 +133,19 @@ class Command(BaseCommand):
 
         # The test runner requires us to flush after a syncdb but before migrations,
         # so do that here.
+
+        # to increase speed of db setup step on mmp we have to omit steps of
+        # find & install fixtures (which we don't use)
+        extra = {}
+        if getattr(settings, 'DISABLE_TEST_FIXTURES', None):
+            extra.update({'load_initial_data': False})
+            print(
+                """
+                NOTE: you have enabled DISABLE_TEST_FIXTURES option,
+                so tests which requires fixtures will work incorrectly
+                """
+            )
+
         if options.get("test_flush", False):
             call_command(
                 'flush',
@@ -140,6 +154,7 @@ class Command(BaseCommand):
                 database=db,
                 reset_sequences=False,
                 inhibit_post_migrate=True,
+                **extra
             )
 
         # Migrate!

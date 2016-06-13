@@ -368,6 +368,19 @@ class BaseDatabaseCreation(object):
         # We report migrate messages at one level lower than that requested.
         # This ensures we don't get flooded with messages during testing
         # (unless you really ask to be flooded).
+
+        # to increase speed of db setup step on mmp we have to omit steps of
+        # find & install fixtures (which we don't use)
+        extra = {}
+        if getattr(settings, 'DISABLE_TEST_FIXTURES', None):
+            extra.update({'load_initial_data': False})
+            print(
+                """
+                NOTE: you have enabled DISABLE_TEST_FIXTURES option,
+                so tests which requires fixtures will work incorrectly
+                """
+            )
+
         call_command(
             'migrate',
             verbosity=max(verbosity - 1, 0),
@@ -375,6 +388,7 @@ class BaseDatabaseCreation(object):
             database=self.connection.alias,
             test_database=True,
             test_flush=True,
+            **extra
         )
 
         # We then serialize the current state of the database into a string

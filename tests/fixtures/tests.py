@@ -1,6 +1,7 @@
 from __future__ import unicode_literals
 
 import warnings
+from mock import patch
 
 from django.contrib.sites.models import Site
 from django.core import management
@@ -8,6 +9,7 @@ from django.db import connection, IntegrityError
 from django.test import TestCase, TransactionTestCase, skipUnlessDBFeature
 from django.utils.encoding import force_text
 from django.utils import six
+from django.test.utils import override_settings
 
 from .models import Article, Book, Spy, Tag, Visa
 
@@ -441,3 +443,104 @@ class FixtureTransactionTests(DumpDataAssertMixin, TransactionTestCase):
             '<Article: Time to reform copyright>',
             '<Article: Poker has no place on ESPN>',
         ])
+
+
+class DisableLoadFixturesInSettingsTests(TestCase):
+    """
+    Testing custom feature DISABLE_TEST_FIXTURES which helps to speed up
+    local development of tests on mmp project.
+    """
+
+    @override_settings(DISABLE_TEST_FIXTURES=False)
+    @patch('django.core.management.call_command')
+    def test_fixtures_loading_enabled_in_create_test_db(self, m_call_command):
+        """
+        Testing behaviour of DISABLE_TEST_FIXTURES in BaseDatabaseCreation
+        """
+        assert(m_call_command.call_count, 0)
+        connection.creation.create_test_db()
+        # there are 2 call_commands happens during execution of create_test_db.
+        assert(m_call_command.call_count, 2)
+        m_call_command.assert_any_call(
+            'migrate',
+            verbosity=0,
+            interactive=False,
+            database='default',
+            test_database=True,
+            test_flush=True,
+            **{}
+        )
+
+    @override_settings(DISABLE_TEST_FIXTURES=True)
+    @patch('django.core.management.call_command')
+    def test_fixtures_loading_disabled_in_create_test_db(self, m_call_command):
+        """
+        Testing behaviour of DISABLE_TEST_FIXTURES in BaseDatabaseCreation
+        """
+        assert(m_call_command.call_count, 0)
+        connection.creation.create_test_db()
+        # there are 2 call_commands happens during execution of create_test_db.
+        assert(m_call_command.call_count, 2)
+        m_call_command.assert_any_call(
+            'migrate',
+            verbosity=0,
+            interactive=False,
+            database='default',
+            test_database=True,
+            test_flush=True,
+            **{'load_initial_data': False}
+        )
+
+    @override_settings(DISABLE_TEST_FIXTURES=False)
+    @patch('django.core.management.commands.migrate.call_command')
+    def test_fixtures_loading_enabled_in_migrate_test_db(self, m_call_command):
+        """
+        Testing behaviour of DISABLE_TEST_FIXTURES in django/core/management/commands/migrate.py
+        """
+        assert(m_call_command.call_count, 0)
+        management.call_command(
+            'migrate',
+            verbosity=0,
+            interactive=False,
+            database='default',
+            test_database=True,
+            test_flush=True,
+        )
+        # there are 2 call_commands happens during execution of migrate command.
+        assert(m_call_command.call_count, 2)
+        m_call_command.assert_any_call(
+            'flush',
+            verbosity=0,
+            interactive=False,
+            database='default',
+            reset_sequences=False,
+            inhibit_post_migrate=True,
+            **{}
+        )
+
+    @override_settings(DISABLE_TEST_FIXTURES=True)
+    @patch('django.core.management.commands.migrate.call_command')
+    def test_fixtures_loading_disabled_in_migrate_test_db(self, m_call_command):
+        """
+        Testing behaviour of DISABLE_TEST_FIXTURES in django/core/management/commands/migrate.py
+        """
+        assert(m_call_command.call_count, 0)
+        management.call_command(
+            'migrate',
+            verbosity=0,
+            interactive=False,
+            database='default',
+            test_database=True,
+            test_flush=True,
+        )
+        # there are 2 call_commands happens during execution of migrate command.
+        assert(m_call_command.call_count, 2)
+        m_call_command.assert_any_call(
+            'flush',
+            verbosity=0,
+            interactive=False,
+            database='default',
+            reset_sequences=False,
+            inhibit_post_migrate=True,
+            **{'load_initial_data': False}
+        )
